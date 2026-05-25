@@ -20,7 +20,15 @@
       "Bash(kill 27374)",
       "Bash(kill 28803)",
       "Bash(kill 30195)",
-      "Bash(kill -9 30195 33364)"
+      "Bash(kill -9 30195 33364)",
+      "Bash(kill 33980)",
+      "Bash(kill 37817)",
+      "Bash(kill 41146)",
+      "Bash(kill 47405)",
+      "Bash(kill 48673)",
+      "Bash(node --input-type=module)",
+      "Bash(git *)",
+      "Bash(grep -E \"\\([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}\\)\")"
     ]
   }
 }

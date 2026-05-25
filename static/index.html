@@ -20,6 +20,12 @@
         <span class="acct-item"><label>Unrealized P&amp;L</label><value id="upnl">—</value></span>
         <span class="acct-item"><label>Realized P&amp;L</label><value id="rpnl">—</value></span>
       </div>
+      <button id="profile-btn" class="profile-btn" title="Investor Profile">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="9" cy="6" r="3"/>
+          <path d="M2 16c0-3.314 3.134-6 7-6s7 2.686 7 6"/>
+        </svg>
+      </button>
     </div>
   </header>
 
@@ -96,13 +102,23 @@
           <strong id="explore-sym-label" class="explore-topbar-sym">—</strong>
           <input id="explore-input" type="text" placeholder="Ticker…" />
           <button id="explore-search-btn">Search</button>
+          <button id="explore-factor-in-btn">Factor In</button>
+          <div class="explore-topbar-lang">
+            <span class="explore-topbar-label">Lang</span>
+            <select id="lang-select">
+              <option value="en">EN</option>
+              <option value="zh">中文</option>
+            </select>
+          </div>
         </div>
 
         <div class="explore-grid">
 
           <!-- Section 1: Overall Recommendation -->
           <div class="explore-card">
-            <div class="explore-card-hd">Overall Recommendation</div>
+            <div class="explore-card-hd">Overall Recommendation
+              <button class="card-expand-btn" title="Expand"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="1,4 1,1 4,1"/><polyline points="7,1 10,1 10,4"/><polyline points="10,7 10,10 7,10"/><polyline points="4,10 1,10 1,7"/></svg></button>
+            </div>
             <div class="explore-card-body scroll" id="body-rec">
               <p class="empty">Enter a ticker to begin.</p>
             </div>
@@ -110,16 +126,27 @@
 
           <!-- Section 3: Technical Analysis (right column, row 1) -->
           <div class="explore-card">
-            <div class="explore-card-hd">Technical Analysis</div>
+            <div class="explore-card-hd">Technical Analysis
+              <button class="card-expand-btn" title="Expand"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="1,4 1,1 4,1"/><polyline points="7,1 10,1 10,4"/><polyline points="10,7 10,10 7,10"/><polyline points="4,10 1,10 1,7"/></svg></button>
+            </div>
             <div class="explore-card-body no-pad flex-col" id="body-tech">
-              <div id="explore-chart-wrap"></div>
-              <div id="body-tech-indicators" class="tech-indicator-row"></div>
+              <div class="tech-split">
+                <div class="tech-chart-side">
+                  <div id="explore-chart-wrap"></div>
+                  <div id="body-tech-indicators" class="tech-indicator-row"></div>
+                </div>
+                <div class="tech-ai-side" id="body-tech-ai">
+                  <p class="empty">—</p>
+                </div>
+              </div>
             </div>
           </div>
 
           <!-- Section 2: News Sources (left column, row 2) -->
           <div class="explore-card">
-            <div class="explore-card-hd">News Sources</div>
+            <div class="explore-card-hd">News Sources
+              <button class="card-expand-btn" title="Expand"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="1,4 1,1 4,1"/><polyline points="7,1 10,1 10,4"/><polyline points="10,7 10,10 7,10"/><polyline points="4,10 1,10 1,7"/></svg></button>
+            </div>
             <div class="explore-card-body scroll" id="body-news">
               <p class="empty">No news loaded.</p>
             </div>
@@ -130,9 +157,29 @@
             <div class="explore-card-hd">
               AI Analysis
               <button class="card-action-btn" id="explore-ai-btn">Analyze</button>
+              <button class="card-expand-btn" title="Expand"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="1,4 1,1 4,1"/><polyline points="7,1 10,1 10,4"/><polyline points="10,7 10,10 7,10"/><polyline points="4,10 1,10 1,7"/></svg></button>
             </div>
-            <div class="explore-card-body scroll" id="body-ai">
-              <p class="empty">Click Analyze to generate a DeepSeek analysis.</p>
+            <div class="explore-card-body no-pad ai-section-split">
+
+              <!-- Left: overall analysis -->
+              <div class="ai-analysis-pane" id="body-ai">
+                <p class="empty">Click Analyze to generate a DeepSeek analysis.</p>
+              </div>
+
+              <!-- Right: internet query panel -->
+              <div class="ai-query-panel">
+                <div class="ai-query-topbar">
+                  <input id="ai-query-input" type="text" placeholder="Search the internet…" />
+                  <button id="ai-query-btn">Search</button>
+                </div>
+                <div class="ai-query-body">
+                  <div class="ai-query-answer" id="ai-query-answer">
+                    <p class="empty">Ask a question to search the internet for relevant news.</p>
+                  </div>
+                  <div class="ai-query-sources" id="ai-query-sources"></div>
+                </div>
+              </div>
+
             </div>
           </div>
 
@@ -141,7 +188,77 @@
       <!-- ── end explore-mode ──────────────────────────────── -->
 
     </main>
+
+    <!-- ── Factors sidebar ──────────────────────────────── -->
+    <aside id="factors-sidebar">
+      <div class="factors-hd">
+        <span>Factors</span>
+        <button id="factors-clear-btn" title="Clear all">&#x2715;</button>
+      </div>
+      <ul id="factors-list"></ul>
+    </aside>
+    <!-- ── end Factors sidebar ────────────────────────── -->
+
   </div>
+
+  <!-- ── Profile modal ───────────────────────────────────── -->
+  <div id="profile-overlay" class="modal-overlay" style="display:none">
+    <div class="modal-box profile-modal-box">
+      <div class="modal-hd">
+        <span>Investor Profile</span>
+        <button class="modal-close-btn" id="profile-close">&#x2715;</button>
+      </div>
+      <div class="profile-modal-body">
+
+        <p class="profile-hint">Describe yourself as an investor. The AI will frame every analysis from your perspective.</p>
+
+        <div class="profile-chips-wrap">
+          <span class="profile-chips-label">Quick insert</span>
+          <div class="profile-chips">
+            <button class="profile-chip" data-snippet="growth-oriented">Growth</button>
+            <button class="profile-chip" data-snippet="value-focused">Value</button>
+            <button class="profile-chip" data-snippet="income/dividend-focused">Income</button>
+            <button class="profile-chip" data-snippet="momentum trader">Momentum</button>
+            <button class="profile-chip" data-snippet="conservative risk tolerance">Conservative</button>
+            <button class="profile-chip" data-snippet="moderate risk tolerance">Moderate risk</button>
+            <button class="profile-chip" data-snippet="high risk tolerance">Aggressive</button>
+            <button class="profile-chip" data-snippet="short-term horizon (<3 months)">Short-term</button>
+            <button class="profile-chip" data-snippet="long-term horizon (1+ years)">Long-term</button>
+            <button class="profile-chip" data-snippet="focused on US equities">US Stocks</button>
+            <button class="profile-chip" data-snippet="focused on tech stocks">Tech focus</button>
+            <button class="profile-chip" data-snippet="avoid leveraged positions">No leverage</button>
+          </div>
+        </div>
+
+        <div class="profile-textarea-wrap">
+          <textarea id="profile-text" rows="10" placeholder="e.g. I'm a growth-oriented investor with moderate risk tolerance and a long-term horizon. I focus on US tech and AI stocks, avoid leverage, and target 15%+ annual return…"></textarea>
+          <span id="profile-charcount" class="profile-charcount">0</span>
+        </div>
+
+        <div class="profile-footer">
+          <button id="profile-clear-btn" class="profile-clear-btn">Clear</button>
+          <button id="profile-save-btn">Save <kbd>⌘↵</kbd></button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <!-- ── end Profile modal ─────────────────────────────────── -->
+
+  <!-- ── Factor In modal ──────────────────────────────────── -->
+  <div id="factor-in-overlay" class="modal-overlay" style="display:none">
+    <div class="modal-box">
+      <div class="modal-hd">
+        <span>Factor In</span>
+        <button class="modal-close-btn" id="factor-in-close">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+        <input id="factor-in-input" type="text" placeholder="Enter factor or note…" />
+        <button id="factor-in-add-btn">Add</button>
+      </div>
+    </div>
+  </div>
+  <!-- ── end Factor In modal ──────────────────────────────── -->
 
   <script src="/static/app.js"></script>
 </body>

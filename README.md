@@ -1,4 +1,4 @@
-# Stock Monitor
+# Stock Copilot
 
 A web dashboard for Interactive Brokers — portfolio positions, candlestick charts, and AI-analyzed news, all in one browser tab.
 
