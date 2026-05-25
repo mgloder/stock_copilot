@@ -1,0 +1,1 @@
+- [Stock Monitoring Project Architecture](project_stack.md) — FastAPI+ib_insync stack, ADR index (0001-0005), key constraints

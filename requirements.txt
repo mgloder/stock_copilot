@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+ib_insync
+yfinance
+openai
+httpx[socks]
+python-dotenv
+aiohttp

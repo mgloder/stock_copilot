@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install *)",
+      "Bash(python *)",
+      "Bash(python3 *)",
+      "Bash(uvicorn main:app --host 127.0.0.1 --port 8000)",
+      "Bash(echo \"server pid: $!\")",
+      "Bash(python3 -m uvicorn main:app --host 127.0.0.1 --port 8000)",
+      "Bash(echo \"PID: $!\")",
+      "Read(//tmp/**)",
+      "Read(//private/tmp/**)",
+      "Bash(xargs kill -9)",
+      "Bash(curl -s http://127.0.0.1:8000/api/status)",
+      "Bash(curl *)",
+      "Bash(env)",
+      "Bash(ALL_PROXY=\"\" http_proxy=\"\" https_proxy=\"\" python3 *)",
+      "Bash(ALL_PROXY='' http_proxy='' https_proxy='' python3 -c ' *)",
+      "Bash(journalctl -u uvicorn --no-pager -n 50)",
+      "Bash(kill 27374)",
+      "Bash(kill 28803)",
+      "Bash(kill 30195)",
+      "Bash(kill -9 30195 33364)"
+    ]
+  }
+}

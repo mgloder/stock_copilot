@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock Monitor</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <span class="logo">StockMonitor</span>
+      <span id="ib-status" class="badge badge-disconnected">Disconnected</span>
+    </div>
+    <div class="header-right">
+      <div class="account-summary">
+        <span class="acct-item"><label>Net Liq</label><value id="net-liq">—</value></span>
+        <span class="acct-item"><label>Cash</label><value id="cash">—</value></span>
+        <span class="acct-item"><label>Unrealized P&amp;L</label><value id="upnl">—</value></span>
+        <span class="acct-item"><label>Realized P&amp;L</label><value id="rpnl">—</value></span>
+      </div>
+    </div>
+  </header>
+
+  <div class="workspace">
+
+    <!-- Sidebar navigation -->
+    <nav class="sidebar">
+      <button class="nav-btn active" id="nav-positions" title="Current Position">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <rect x="2" y="2" width="14" height="14" rx="2"/>
+          <line x1="5" y1="6" x2="13" y2="6"/>
+          <line x1="5" y1="9" x2="13" y2="9"/>
+          <line x1="5" y1="12" x2="10" y2="12"/>
+        </svg>
+        <span>Position</span>
+      </button>
+      <button class="nav-btn" id="nav-explore" title="Exploration">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="8" cy="8" r="5"/>
+          <line x1="12" y1="12" x2="16" y2="16"/>
+        </svg>
+        <span>Explore</span>
+      </button>
+    </nav>
+
+    <!-- Main area -->
+    <main>
+
+      <!-- ── Position mode panels ──────────────────────────── -->
+      <section class="panel panel-left" id="panel-positions">
+        <h2>Positions</h2>
+        <table id="positions-table">
+          <thead>
+            <tr><th>Symbol</th><th>Type</th><th>Qty</th><th>Avg Cost</th></tr>
+          </thead>
+          <tbody id="positions-body">
+            <tr><td colspan="4" class="empty">No positions</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="panel panel-chart" id="panel-chart">
+        <div class="chart-toolbar">
+          <input id="symbol-input" type="text" placeholder="Ticker (e.g. AAPL)" />
+          <button id="load-btn">Load</button>
+          <select id="duration-select">
+            <option value="5 D">5D</option>
+            <option value="30 D" selected>1M</option>
+            <option value="90 D">3M</option>
+            <option value="1 Y">1Y</option>
+          </select>
+          <select id="bar-select">
+            <option value="1 hour">1H</option>
+            <option value="1 day" selected>1D</option>
+          </select>
+          <span id="live-quote" class="live-quote"></span>
+        </div>
+        <div id="chart"></div>
+      </section>
+
+      <section class="panel panel-news" id="panel-news">
+        <div class="news-toolbar">
+          <h2 id="news-title">News</h2>
+          <button id="analyze-btn" title="Analyze impact with AI">AI Impact</button>
+        </div>
+        <div id="news-list"><p class="empty">Select a ticker to load news.</p></div>
+      </section>
+
+      <!-- ── Explore mode (full-span, hidden by default) ──── -->
+      <div id="explore-mode" style="display:none">
+
+        <div class="explore-topbar">
+          <span class="explore-topbar-label">Exploring</span>
+          <strong id="explore-sym-label" class="explore-topbar-sym">—</strong>
+          <input id="explore-input" type="text" placeholder="Ticker…" />
+          <button id="explore-search-btn">Search</button>
+        </div>
+
+        <div class="explore-grid">
+
+          <!-- Section 1: Overall Recommendation -->
+          <div class="explore-card">
+            <div class="explore-card-hd">Overall Recommendation</div>
+            <div class="explore-card-body scroll" id="body-rec">
+              <p class="empty">Enter a ticker to begin.</p>
+            </div>
+          </div>
+
+          <!-- Section 3: Technical Analysis (right column, row 1) -->
+          <div class="explore-card">
+            <div class="explore-card-hd">Technical Analysis</div>
+            <div class="explore-card-body no-pad flex-col" id="body-tech">
+              <div id="explore-chart-wrap"></div>
+              <div id="body-tech-indicators" class="tech-indicator-row"></div>
+            </div>
+          </div>
+
+          <!-- Section 2: News Sources (left column, row 2) -->
+          <div class="explore-card">
+            <div class="explore-card-hd">News Sources</div>
+            <div class="explore-card-body scroll" id="body-news">
+              <p class="empty">No news loaded.</p>
+            </div>
+          </div>
+
+          <!-- Section 4: AI Analysis (right column, row 2) -->
+          <div class="explore-card">
+            <div class="explore-card-hd">
+              AI Analysis
+              <button class="card-action-btn" id="explore-ai-btn">Analyze</button>
+            </div>
+            <div class="explore-card-body scroll" id="body-ai">
+              <p class="empty">Click Analyze to generate a DeepSeek analysis.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <!-- ── end explore-mode ──────────────────────────────── -->
+
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
