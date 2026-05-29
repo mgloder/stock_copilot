@@ -212,7 +212,10 @@ function renderRecommendation(data) {
   const trendTxt = t.trend ? t.trend.charAt(0).toUpperCase() + t.trend.slice(1) : "—";
 
   document.getElementById("body-rec").innerHTML = `
-    <div class="rec-signal ${sigClass}">${sig.toUpperCase()}</div>
+    <div class="rec-signal-wrap">
+      <div id="rec-signal-badge" class="rec-signal ${sigClass}">${sig.toUpperCase()}</div>
+      <span id="rec-signal-source" class="rec-signal-source">Technical</span>
+    </div>
     <div class="rec-price">
       ${fmt(p.current)}
       <span class="chg ${chgClass}">&nbsp;${chgSign}${p.change != null ? p.change.toFixed(2) : "—"} (${chgSign}${p.change_pct != null ? p.change_pct.toFixed(2) : "—"}%)</span>
@@ -301,6 +304,32 @@ async function loadTechAI(symbol, price, t) {
   }
 }
 
+function updateRecBadgeFromAI(analysisText) {
+  const badge  = document.getElementById("rec-signal-badge");
+  const source = document.getElementById("rec-signal-source");
+  if (!badge || !analysisText) return;
+
+  const text = analysisText.toLowerCase();
+
+  // Match "Overall Sentiment" / "整体情绪" line first, then fall back to full text scan
+  const sentimentLine = text.match(/overall sentiment[^\n]*\n?([^\n]+)/i)?.[1] || text;
+
+  let sig, cls, label;
+  if (/bullish|看多|买入/.test(sentimentLine)) {
+    sig = currentLang === "zh" ? "看多" : "BULLISH"; cls = "sig-buy";
+  } else if (/bearish|看空|卖出/.test(sentimentLine)) {
+    sig = currentLang === "zh" ? "看空" : "BEARISH"; cls = "sig-sell";
+  } else if (/neutral|中性|持有/.test(sentimentLine)) {
+    sig = currentLang === "zh" ? "中性" : "NEUTRAL"; cls = "sig-hold";
+  } else {
+    return; // couldn't parse — leave badge as-is
+  }
+
+  badge.textContent = sig;
+  badge.className = `rec-signal ${cls}`;
+  if (source) { source.textContent = "AI"; source.style.color = "var(--accent)"; source.style.borderColor = "rgba(88,166,255,.4)"; }
+}
+
 // ── Explore: Section 4 — AI Analysis ─────────────────────────────────────────
 async function runExploreAnalysis() {
   if (!exploreSymbol) return;
@@ -381,10 +410,18 @@ async function runExploreAnalysis() {
                  <div class="weighing-body">${fmtAnalysis(evt.weighing)}</div>
                </details>`
             : "";
+          const reasoningLabel = currentLang === "zh" ? "模型推理过程" : "Model Reasoning";
+          const reasoningHtml = evt.reasoning
+            ? `<details class="weighing-section">
+                 <summary><span class="weighing-arrow">&#9658;</span>${reasoningLabel}</summary>
+                 <div class="weighing-body reasoning-body">${fmtAnalysis(evt.reasoning)}</div>
+               </details>`
+            : "";
           const resultEl = document.getElementById("ai-result");
           if (resultEl) {
-            resultEl.innerHTML = weighingHtml + `<div class="ai-body">${fmtAnalysis(evt.analysis)}</div>`;
+            resultEl.innerHTML = weighingHtml + reasoningHtml + `<div class="ai-body">${fmtAnalysis(evt.analysis)}</div>`;
           }
+          updateRecBadgeFromAI(evt.analysis);
         }
       }
     }

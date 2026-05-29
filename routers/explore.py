@@ -458,13 +458,26 @@ async def explore_analysis(
             f"Today is {date_str}, {time_str}.{profile_block} {lang_instr}"
         )
 
+        profile_section = profile_text.strip() if profile_text else None
+
         if lang == "zh":
+            profile_source = (
+                f"**[4] 投资者画像**\n{profile_section}\n\n"
+                if profile_section else ""
+            )
+            profile_note = (
+                "投资者画像已提供。请在权重评估中将其纳入第四类信息源，"
+                "并在每个维度上评估该投资者的偏好与当前信号是否契合。"
+                if profile_section else ""
+            )
             stage1_prompt = (
-                f"请分别评估以下三类信息源对 {sym} 的影响，并为每类给出：\n"
+                f"请分别评估以下{'四' if profile_section else '三'}类信息源对 {sym} 的影响，并为每类给出：\n"
                 "① 2-3句客观评估  ② 方向：看多 / 中性 / 看空  ③ 权重：高 / 中 / 低\n\n"
                 f"**[1] 技术指标**\n{tech_block or '无数据。'}\n"
                 f"**[2] 近期新闻标题**\n{headlines or '无新闻。'}\n\n"
                 f"**[3] 用户提供的事实**\n{factors_section}\n\n"
+                f"{profile_source}"
+                f"{profile_note}\n\n"
                 "请保持简洁，此输出将作为第二阶段结论的输入。"
             )
             stage2_prompt = (
@@ -472,16 +485,33 @@ async def explore_analysis(
                 "**多头逻辑**（2-3句，聚焦高权重正向催化剂）\n"
                 "**空头逻辑**（2-3句，聚焦高权重风险）\n"
                 "**近期展望**（未来2-4周的关注点）\n"
-                "**整体情绪**（看多 / 中性 / 看空，附一句权重加权理由）"
+                "**整体情绪**（看多 / 中性 / 看空，附一句权重加权理由）\n"
+                + (
+                    "**对你而言**（直接说明这只股票是否符合该投资者的风险偏好、时间跨度和投资目标，"
+                    "明确指出哪些因素支持或阻碍其持有）"
+                    if profile_section else ""
+                )
             )
         else:
+            profile_source = (
+                f"**[4] Investor Profile**\n{profile_section}\n\n"
+                if profile_section else ""
+            )
+            profile_note = (
+                "An investor profile is provided above as source [4]. "
+                "Evaluate how well the current signal fits this investor's stated style, "
+                "risk tolerance, time horizon, and goals — and weight it accordingly."
+                if profile_section else ""
+            )
             stage1_prompt = (
-                f"Assess the following three input sources for {sym}. For each provide:\n"
-                "① 2-3 sentence assessment  ② Direction: Bullish / Neutral / Bearish"
-                "  ③ Weight: High / Medium / Low (signal strength and reliability)\n\n"
+                f"Assess the following {'four' if profile_section else 'three'} input sources for {sym}. For each provide:\n"
+                "① 2-3 sentence assessment  ② Direction: Bullish / Neutral / Bearish  "
+                "③ Weight: High / Medium / Low (signal strength and reliability)\n\n"
                 f"**[1] Technical Indicators**\n{tech_block or 'No data available.'}\n"
                 f"**[2] Recent News Headlines**\n{headlines or 'No news available.'}\n\n"
                 f"**[3] User-Provided Facts**\n{factors_section}\n\n"
+                f"{profile_source}"
+                f"{profile_note}\n\n"
                 "Be concise. This output feeds a second-stage conclusion."
             )
             stage2_prompt = (
@@ -491,7 +521,12 @@ async def explore_analysis(
                 "**Bear Thesis** (2-3 sentences — driven by high-weight risk factors)\n"
                 "**Near-Term Outlook** (what to watch in the next 2-4 weeks)\n"
                 "**Overall Sentiment** (bullish / neutral / bearish with a one-sentence justification "
-                "that reflects the relative factor weights)"
+                "that reflects the relative factor weights)\n"
+                + (
+                    "**For You** (directly address whether this stock fits the investor's stated style, "
+                    "risk tolerance, time horizon, and goals — name specific factors that support or argue against holding it)"
+                    if profile_section else ""
+                )
             )
 
         # ── Stage 1: factor weighting ────────────────────────────────────────
@@ -515,10 +550,10 @@ async def explore_analysis(
         t4 = "阶段一完成，正在生成加权结论…" if lang == "zh" else "Stage 1 complete — generating weighted conclusion…"
         yield _sse({"type": "thinking", "text": t4})
 
-        # ── Stage 2: conclusion ──────────────────────────────────────────────
+        # ── Stage 2: conclusion (deepseek-reasoner for richer analysis) ────────
         try:
             stage2_resp = await client.chat.completions.create(
-                model="deepseek-chat",
+                model="deepseek-reasoner",
                 max_tokens=700,
                 messages=[
                     {"role": "system",    "content": system_msg},
@@ -527,13 +562,15 @@ async def explore_analysis(
                     {"role": "user",      "content": stage2_prompt},
                 ],
             )
-            analysis = stage2_resp.choices[0].message.content.strip()
+            msg = stage2_resp.choices[0].message
+            analysis = msg.content.strip()
+            reasoning = getattr(msg, "reasoning_content", None) or ""
         except Exception as e:
             logger.warning("DeepSeek stage2 failed for %s: %s", sym, e)
-            yield _sse({"type": "result", "weighing": weighing, "analysis": "Conclusion unavailable at this time."})
+            yield _sse({"type": "result", "weighing": weighing, "analysis": "Conclusion unavailable at this time.", "reasoning": ""})
             return
 
-        yield _sse({"type": "result", "weighing": weighing, "analysis": analysis})
+        yield _sse({"type": "result", "weighing": weighing, "analysis": analysis, "reasoning": reasoning})
 
     return StreamingResponse(
         stream(),
