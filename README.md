@@ -2,6 +2,10 @@
 
 A personal stock intelligence dashboard — portfolio positions, candlestick charts, AI-powered stock exploration, and real-time quotes, all in one browser tab.
 
+## Preview
+
+![StockMonitor Explore UI](./.img/image.png)
+
 **Backend:** FastAPI + `ib_insync` connecting to IB Gateway or TWS.  
 **Frontend:** Plain HTML/JS (no build step) with TradingView Lightweight Charts.  
 **AI:** DeepSeek for multi-stage stock analysis and internet research via Brave Search.  
