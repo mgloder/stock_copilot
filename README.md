@@ -219,3 +219,15 @@ The server is fully functional when IB Gateway is not running:
 **Live quotes silent** — IB only pushes ticks during market hours for symbols with active subscriptions.
 
 **Yahoo Finance returns empty data** — `yfinance` occasionally rate-limits. Retry after a short wait.
+
+---
+
+## Next Steps
+
+1. **Add time travel + regression test**
+   - Introduce a "time travel" mode to replay historical market states and evaluate recommendation consistency at specific timestamps.
+   - Add regression tests to lock expected outputs and prevent behavior drift after model/prompt/logic updates.
+
+2. **Add Global Scan for high-value opportunities**
+   - Build a global market scanner to search and rank stocks with strong investment value based on configurable filters (valuation, trend, momentum, quality, and risk).
+   - Feed scan candidates into Explore mode for deeper AI analysis and thesis building.
