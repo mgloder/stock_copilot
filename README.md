@@ -1,8 +1,12 @@
-# Stock Copilot
+# StockMonitor
 
-A web dashboard for Interactive Brokers — portfolio positions, candlestick charts, and AI-analyzed news, all in one browser tab.
+A personal stock intelligence dashboard — portfolio positions, candlestick charts, AI-powered stock exploration, and real-time quotes, all in one browser tab.
 
-The backend is FastAPI with `ib_insync` connecting to IB Gateway or TWS. The frontend is plain HTML/JS (no build step) using TradingView Lightweight Charts for candlestick rendering. News analysis is handled by Claude Haiku via the Anthropic API. When IB is disconnected, chart and news data fall back automatically to Yahoo Finance.
+**Backend:** FastAPI + `ib_insync` connecting to IB Gateway or TWS.  
+**Frontend:** Plain HTML/JS (no build step) with TradingView Lightweight Charts.  
+**AI:** DeepSeek for multi-stage stock analysis and internet research via Brave Search.  
+**Data:** Interactive Brokers for live positions/quotes; Yahoo Finance as fallback.  
+**Persistence:** SQLite (`data.db`) for investor profile and research factors.
 
 ---
 
@@ -11,10 +15,11 @@ The backend is FastAPI with `ib_insync` connecting to IB Gateway or TWS. The fro
 ### 1. Prerequisites
 
 - Python 3.11+
-- IB Gateway or TWS running locally with API access enabled (see [Enabling API access](#enabling-api-access) below)
-- An Anthropic API key if you want AI news impact labels (optional — the rest works without it)
+- IB Gateway or TWS running locally with API access enabled (see [Enabling API access](#enabling-api-access))
+- A DeepSeek API key for AI analysis (optional — all other features work without it)
+- A Brave Search API key for internet research queries (optional)
 
-### 2. Clone and install
+### 2. Install
 
 ```bash
 cd stock_monitoring
@@ -27,26 +32,23 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Open `.env` and set your values:
+Edit `.env` with your values:
 
-```
+```env
 IB_HOST=127.0.0.1
 IB_PORT=4002
 IB_CLIENT_ID=1
-ANTHROPIC_API_KEY=your_key_here
+DEEPSEEK_API_KEY=your_key_here
+BRAVE_SEARCH_API_KEY=your_key_here
 ```
 
-See [Configuration](#configuration) for what each variable does and [Common IB ports](#common-ib-ports) for the right port number.
-
-### 4. Start the server
+### 4. Run
 
 ```bash
 uvicorn main:app --reload
 ```
 
-Open **http://localhost:8000** in your browser.
-
-You should see the dashboard load. If IB Gateway is running and connected, the portfolio panel populates automatically. If IB is not running, the dashboard still loads and falls back to Yahoo Finance for chart and news data.
+Open **http://localhost:8000**.
 
 ---
 
@@ -54,10 +56,11 @@ You should see the dashboard load. If IB Gateway is running and connected, the p
 
 | Variable | Default | Description |
 |---|---|---|
-| `IB_HOST` | `127.0.0.1` | Hostname or IP of the machine running IB Gateway / TWS |
-| `IB_PORT` | `4002` | Port IB Gateway / TWS is listening on (see table below) |
-| `IB_CLIENT_ID` | `1` | Identifies this connection to IB. **Must be unique** if you have multiple clients connecting simultaneously (e.g., this dashboard plus TWS's own connection, or two browser sessions running the server). Reusing an ID while another client holds it will cause the new connection to be rejected. |
-| `ANTHROPIC_API_KEY` | _(unset)_ | Enables the AI news impact feature. If unset, the "AI Impact" button is silently disabled — no error is raised. |
+| `IB_HOST` | `127.0.0.1` | Hostname of the machine running IB Gateway / TWS |
+| `IB_PORT` | `4002` | Port IB Gateway / TWS listens on (see table below) |
+| `IB_CLIENT_ID` | `1` | Must be unique per simultaneous client connection |
+| `DEEPSEEK_API_KEY` | _(unset)_ | Enables AI analysis, factor weighting, and technical commentary |
+| `BRAVE_SEARCH_API_KEY` | _(unset)_ | Enables internet search queries in the AI Analysis panel |
 
 ### Common IB ports
 
@@ -68,147 +71,147 @@ You should see the dashboard load. If IB Gateway is running and connected, the p
 | TWS | Paper trading | `7497` |
 | TWS | Live trading | `7496` |
 
-The default `.env.example` uses `4002` (IB Gateway, paper trading). Change it to match your setup.
-
 ### Enabling API access
 
-You must explicitly enable socket API connections in IB Gateway or TWS before this app can connect.
-
-**IB Gateway:** Configure → Settings → API → Enable ActiveX and Socket Clients
-
+**IB Gateway:** Configure → Settings → API → Enable ActiveX and Socket Clients  
 **TWS:** Edit → Global Configuration → API → Settings → Enable ActiveX and Socket Clients
-
-Both also let you restrict which IP addresses may connect. If you run the dashboard on the same machine as Gateway/TWS, `127.0.0.1` (the default) is sufficient.
-
----
-
-## Running without IB (Yahoo Finance fallback)
-
-The server starts and remains functional even if IB Gateway is not running or the connection is refused. In that mode:
-
-- `GET /api/status` returns `{"connected": false}`
-- `GET /api/portfolio` and `/api/positions` return empty results (no IB data source to fall back to)
-- `GET /api/chart/{symbol}` falls back to Yahoo Finance automatically
-- `GET /api/news/{symbol}` always uses Yahoo Finance (it is never sourced from IB)
-- The WebSocket live quote stream (`/api/ws/quotes/{symbol}`) sends keepalive pings but no price data
-
-This makes the chart and news panels fully usable without an IB connection, which is useful for development or for checking news on a symbol you don't hold.
 
 ---
 
 ## Features
 
-### Portfolio panel (left)
+### Position Mode
 
-- Account summary: Net Liquidation, Cash, Unrealized P&L, Realized P&L
-- Positions table — click any row to load its chart and news
+Accessed via the **Position** tab in the left sidebar.
 
-### Chart panel (center)
+- **Portfolio panel** — account summary (Net Liq, Cash, Unrealized/Realized P&L) and positions table; click any row to load its chart and news
+- **Chart panel** — candlestick chart with 5D / 1M / 3M / 1Y ranges and 1H / 1D bar sizes; live last-price ticker via WebSocket
+- **News panel** — latest headlines with optional AI impact labels (Bullish / Bearish / Neutral)
 
-- Candlestick chart powered by TradingView Lightweight Charts
-- Time ranges: 5D, 1M, 3M, 1Y
-- Bar sizes: 1H, 1D
-- Live last-price ticker via WebSocket (requires active IB connection)
-- Falls back to Yahoo Finance data when IB is disconnected
+### Explore Mode
 
-### News panel (right)
+Accessed via the **Explore** tab. Full-screen layout with four panels.
 
-- Latest headlines for the selected ticker (via Yahoo Finance)
-- **AI Impact** button sends headlines to Claude Haiku and labels each article:
-  - **Bullish** — likely positive price impact
-  - **Bearish** — likely negative price impact
-  - **Neutral** — minimal expected impact
-- Requires `ANTHROPIC_API_KEY` to be set
+#### Overall Recommendation
+Rules-based signal (Buy / Hold / Sell) from SMA crossover and RSI, with a plain-language summary.
+
+#### Technical Analysis
+Interactive candlestick chart with SMA-20 and SMA-50 overlays. An AI commentary panel interprets the indicators in 2–3 plain sentences.
+
+#### News Sources
+Latest headlines for the explored ticker from Yahoo Finance.
+
+#### AI Analysis
+Multi-stage DeepSeek analysis streamed live with visible progress steps:
+
+1. **Stage 1 — Factor Weighting**: the model independently assesses three input sources — technical indicators, news headlines, and user-provided factors — and assigns each a direction (Bullish / Neutral / Bearish) and weight (High / Medium / Low).
+2. **Stage 2 — Conclusion**: using the stage-1 weights as context, the model generates a structured recommendation: Bull Thesis, Bear Thesis, Near-Term Outlook, and Overall Sentiment. High-weight factors dominate the output.
+
+Progress is shown in a live "Analysis steps" collapsible that auto-collapses when the result arrives. The stage-1 weighting is preserved as an expandable "Factor Weighting" block above the conclusion.
+
+**Context injected into every analysis:**
+- Real-time technical indicators (price, SMA-20/50, RSI, trend, 52-week range, market cap)
+- Current date and time (UTC)
+- User-provided factors from the Factor sidebar
+- Investor profile from the Profile modal
+
+#### Internet Search
+Multi-step Brave Search query panel:
+1. DeepSeek decomposes the question into 2–4 targeted sub-queries
+2. Sub-queries run in parallel via Brave Search
+3. Results are deduplicated and synthesised into a cited answer with source links
+
+Selecting a factor in the sidebar automatically fires a contextual search for that factor.
 
 ---
 
-## Project structure
+### Factor Sidebar
+
+Add research factors via the **Factor In** button in the Explore topbar. Each factor:
+
+- Appears in a persistent right sidebar
+- Is passed to AI analysis as "known facts" to incorporate into the recommendation
+- Can be selected — clicking fires an internet search automatically
+- Can be individually deleted or cleared in bulk
+- **Persists in SQLite** across page refreshes
+
+### Investor Profile
+
+Click the **profile icon** (top-right header) to open the profile modal. Describe yourself as an investor in free text — style, risk tolerance, time horizon, goals, constraints. Quick-insert chips let you build the profile without typing.
+
+The profile is injected into the AI system prompt for every analysis, framing the entire output from your investor perspective. **Persists in SQLite** across page refreshes.
+
+---
+
+## Project Structure
 
 ```
 stock_monitoring/
-├── main.py              # FastAPI app entry point + IB connection lifecycle
-├── ib_client.py         # IBManager singleton: connect, positions, quotes, historical bars, WebSocket subscriptions
+├── main.py               # FastAPI app + lifespan (DB init, IB connect)
+├── ib_client.py          # IBManager: connect, positions, quotes, bars, WebSocket
+├── database.py           # SQLite helpers (profile + factors CRUD)
 ├── routers/
-│   ├── portfolio.py     # GET /api/portfolio, /api/positions
-│   ├── quotes.py        # GET /api/quote/{sym}, /api/chart/{sym}
-│   │                    # WS  /api/ws/quotes/{sym}
-│   └── news.py          # GET /api/news/{sym}?analyze=true
+│   ├── portfolio.py      # GET /api/portfolio
+│   ├── quotes.py         # GET /api/chart/{sym}, WS /api/ws/quotes/{sym}
+│   ├── news.py           # GET /api/news/{sym}
+│   ├── explore.py        # GET /api/explore/{sym}, /analysis (SSE), /query (SSE)
+│   └── user.py           # /api/user/profile, /api/user/factors
 ├── static/
 │   ├── index.html
 │   ├── style.css
 │   └── app.js
-├── .env.example
+├── data.db               # SQLite database (gitignored, auto-created on first run)
+├── .env                  # Local secrets (gitignored)
+├── .env.example          # Safe template
 ├── requirements.txt
 └── README.md
 ```
 
 ---
 
-## API endpoints
+## API Reference
 
 | Method | Path | Description |
 |---|---|---|
-| GET | `/api/status` | IB connection health check — returns `{"connected": true\|false}` |
-| GET | `/api/portfolio` | Account summary + all positions |
-| GET | `/api/positions` | Positions list only |
-| GET | `/api/quote/{symbol}` | Snapshot bid / ask / last / volume for a symbol (requires IB) |
-| GET | `/api/chart/{symbol}` | OHLCV bars; query params: `duration` (e.g. `30 D`), `bar_size` (e.g. `1 day`) |
-| WS | `/api/ws/quotes/{symbol}` | Live quote stream; sends a `{"ping": true}` keepalive every 30 s when idle |
-| GET | `/api/news/{symbol}` | News headlines; add `?analyze=true` to include AI impact labels |
+| GET | `/api/status` | IB connection health |
+| GET | `/api/portfolio` | Account summary + positions |
+| GET | `/api/chart/{symbol}` | OHLCV bars (`duration`, `bar_size` params) |
+| WS | `/api/ws/quotes/{symbol}` | Live quote stream |
+| GET | `/api/news/{symbol}` | Headlines; `?analyze=true` adds AI impact labels |
+| GET | `/api/explore/{symbol}` | Price, technicals, bars, news |
+| GET | `/api/explore/{symbol}/technical` | AI technical commentary |
+| GET | `/api/explore/{symbol}/analysis` | SSE — multi-stage AI analysis |
+| GET | `/api/explore/{symbol}/query` | SSE — multi-step internet research |
+| GET | `/api/user/profile` | Get investor profile |
+| PUT | `/api/user/profile` | Save investor profile |
+| GET | `/api/user/factors` | List factors |
+| POST | `/api/user/factors` | Add a factor |
+| DELETE | `/api/user/factors/{id}` | Remove one factor |
+| DELETE | `/api/user/factors` | Clear all factors |
 
 ---
 
-## Development tips
+## Running Without IB
 
-### Auto-reload
+The server is fully functional when IB Gateway is not running:
 
-`--reload` is already included in the Quick Start command. Uvicorn watches for file changes and restarts automatically. There is no frontend build step — edits to `static/` are served immediately on the next browser refresh.
-
-### Testing endpoints without IB
-
-Use `/api/status` first to confirm whether IB is connected:
-
-```bash
-curl http://localhost:8000/api/status
-```
-
-The chart and news endpoints work regardless of IB status:
-
-```bash
-# Chart data (falls back to Yahoo Finance if IB is down)
-curl "http://localhost:8000/api/chart/AAPL?duration=5%20D&bar_size=1%20day"
-
-# News without AI analysis
-curl http://localhost:8000/api/news/AAPL
-
-# News with AI impact labels (requires ANTHROPIC_API_KEY)
-curl "http://localhost:8000/api/news/AAPL?analyze=true"
-```
+- Chart and explore data fall back to Yahoo Finance automatically
+- News always uses Yahoo Finance
+- Portfolio and positions return empty results
+- All Explore, AI analysis, and search features work independently of IB
 
 ---
 
 ## Troubleshooting
 
-### Connection refused on startup
+**Connection refused on startup** — Not fatal; the server logs it and continues. Check IB Gateway / TWS is running and API connections are enabled.
 
-```
-IB Gateway connection failed: ...Connection refused...
-```
+**Client ID conflict** — Change `IB_CLIENT_ID` in `.env` to any unused integer.
 
-The server starts normally and logs this message — it is not fatal. Verify that IB Gateway or TWS is running and that API connections are enabled (see [Enabling API access](#enabling-api-access)). Also check that `IB_PORT` in your `.env` matches the actual port the application is listening on.
+**AI analysis not working** — Confirm `DEEPSEEK_API_KEY` is set. The SSE stream returns a plain-text error if the key is missing.
 
-### `util.patchAsyncio()` warning
+**Internet search returns no results** — Confirm `BRAVE_SEARCH_API_KEY` is set.
 
-`ib_insync` calls `util.patchAsyncio()` at import time in `ib_client.py`. This patches the running event loop so that `ib_insync`'s synchronous helpers work alongside FastAPI's async framework. The call is intentional — you may see a log message about it, which is normal and safe to ignore.
+**Live quotes silent** — IB only pushes ticks during market hours for symbols with active subscriptions.
 
-### Client ID conflict
-
-If you see an error like `There is no valid client with clientId X` or a connection that immediately drops, another process is already connected to IB with the same `IB_CLIENT_ID`. Change the value in `.env` to any unused integer (e.g., `2`) and restart.
-
-### Live quotes not updating
-
-The WebSocket stream only pushes data when IB fires a `pendingTickersEvent` for the subscribed symbol. Outside market hours, or if IB's market data subscription for that symbol is not active, the stream will be silent except for the 30-second keepalive pings. Verify the symbol has market data enabled in your IB account.
-
-### Yahoo Finance returns empty data
-
-`yfinance` occasionally rate-limits or fails for less-liquid symbols. This manifests as an empty chart or no news articles. There is no authentication required — retrying after a short wait usually resolves it.
+**Yahoo Finance returns empty data** — `yfinance` occasionally rate-limits. Retry after a short wait.
